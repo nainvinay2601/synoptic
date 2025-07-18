@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/basic/Navbar";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,11 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${bebasNeue.variable} antialiased p-4`}>
-        <Navbar />
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${inter.variable} ${bebasNeue.variable} antialiased p-4`}
+        >
+          <Navbar />
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
