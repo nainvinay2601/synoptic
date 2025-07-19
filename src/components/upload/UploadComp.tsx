@@ -9,6 +9,7 @@ import { useUploadThing } from "@/lib/uploadthing";
 import { useState, useCallback, useRef } from "react";
 
 import { Button } from "../ui/button";
+import { File, Upload, X } from "lucide-react";
 
 const UploadComp = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -73,41 +74,127 @@ const UploadComp = () => {
     }
   }, []);
 
-
-  //
+  //Trigger file input when drag div is clicked
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
-    <div className="w-full h-[85vh] mt-4 border border-dashed border-black rounded-xl bg-[#c6d8ff] flex justify-center items-center">
-      <h2>Upload PDF</h2>
+    <div className=" mt-4  rounded-xl  font-inter ">
+      {/* Heading  */}
+      <h2 className="text-[24px] font-bold">Upload PDF</h2>
 
-        <div>
-            
-        </div>
+      {/* Dragging Area */}
+
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors h-[50vh] flex justify-center items-center flex-col ${
+          isDragging
+            ? "border-blue-500 bg-blue-50"
+            : "border-gray-500 bg-gray-200"
+        }`}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onDragOver={(e) => e.preventDefault()}
+        onClick={triggerFileInput}
+      >
+        <Upload className="mx-auto text-3xl text-black mb-3" />
+        <p className="text-black mb-1">
+          {isDragging
+            ? "Drop Your Files Here ://"
+            : "Drag & Drop Your Files here or click to browse :) "}
+        </p>
+        <p className="text-sm text-gray-500">
+          {permittedFileInfo?.config?.pdf
+            ? `Supports: ${permittedFileInfo.config.pdf
+                .map((ext) => `.${ext}`)
+                .join(", ")}`
+            : "Supports: PDF Files"}
+        </p>
+      </div>
       <input
+        ref={fileInputRef}
         type="file"
         accept="application/pdf"
         onChange={handleFileChange}
         multiple
         disabled={isUploading}
-        className="cursor-pointer bg-gray-400"
+        className="hidden"
       />
 
-      <Button
-        onClick={handleUpload}
-        disabled={isUploading}
-        variant={"secondary"}
-        className="cursor-pointer font-inter"
-      >
-        {isUploading ? "Uploading ...." : "Upload"}
-      </Button>
+      {/* File Preview */}
 
-      {permittedFileInfo && (
-        <p>
-          {" "}
-          Allowed File Types:{" "}
-          {permittedFileInfo.config.pdf?.join(", ") || "PDF"}
-        </p>
+      {files.length > 0 && (
+        <div className="mt-4 space-y-2">
+          <h3 className="font-medium text-gray-700 font-inter">Selected Files:</h3>
+          <div className="max-h-60 overflow-y-auto">
+            {files.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between  p-2  bg-gray-50  rounded"
+              >
+                <div className="flex items-center">
+                  <File className="text-gray-500  mr-2 " />
+                  <span className="text-sm truncate max-w-xs">{file.name}</span>
+                </div>
+                <Button
+                  variant={"outline"}
+                  onClick={() => onRemove(index)}
+                  className="text-gray-500 hover:text-red-500"
+                  disabled={isUploading}
+                >
+                  <X />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
+
+      {/* Button to handle the file upload  */}
+
+      <Button variant={"outline"}
+        onClick={handleUpload}
+        disabled={isUploading || files.length === 0}
+        className={`mt-4  w-full  py-4 h-[48px]  font-inter  rounded-md  flex  items-center  justify-center ${
+          isUploading
+            ? "bg-blue-300  cursor-not-allowed"
+            : files.length === 0
+            ? "bg-gray-300  cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700  text-white"
+        }`}
+      >
+        {isUploading ? (
+          <>
+            <svg
+              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Uploading ...
+          </>
+        ) : (
+          <>
+            <Upload className="mr-2" />
+            Upload {files.length > 0 ? `(${files.length})` : ""}
+          </>
+        )}
+      </Button>
     </div>
   );
 };
