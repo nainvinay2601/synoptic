@@ -1,5 +1,7 @@
 // uploadthing.ts
-import { OurFileRouter } from "@/app/api/uploadthing/route";
+
+
+import { OurFileRouter } from "@/app/api/uploadthing/core";
 import { generateReactHelpers } from "@uploadthing/react";
 
 
