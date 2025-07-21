@@ -10,26 +10,67 @@ import { useState, useCallback, useRef } from "react";
 
 import { Button } from "../ui/button";
 import { File, Upload, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const UploadComp = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   //we going to use the useUploadThing hook first we destructure -> startUpload, isUploading , permittedFileInfo from the hook first
 
   const { startUpload, isUploading, permittedFileInfo } = useUploadThing(
     "pdfUploader",
     {
       //inLine callback
-      onClientUploadComplete: () => {
-        alert("Upload Complete!");
-        setFiles([]);
+      onClientUploadComplete: (res) => {
+        if (!res?.[0]?.ufsUrl) {
+          toast.error("Upload Complete but the no URL Returned ");
+          return;
+        }
+
+        processPdf(res[0].ufsUrl);
       },
       onUploadError: (error: Error) => {
-        alert(`Upload Failed: ${error.message}`);
+        toast.error(`Upload Failed: ${error.message}`);
       },
     }
   );
+
+  //Process The PDF
+  const processPdf = async (pdfUrl: string) => {
+    setIsProcessing(true);
+    const toastId = toast.loading("Processing PDF ... ");
+    try {
+      console.log("Starting to process PDF", pdfUrl);
+
+      const response = await fetch(`/api/parse-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfUrl }),
+      });
+
+      console.log("response Received", response);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Processing Failed");
+      }
+
+      const result = await response.json();
+      console.log("PDF RESULT", result)
+      localStorage.setItem("pdfProcessingResult:", JSON.stringify(result));
+      toast.success("PDF Processed Successfully", { id: toastId });
+      router.push("/results");
+    } catch (error: any) {
+      toast.error(error.message || "Failed To Process The PDF Sorry ://");
+    } finally {
+      setIsProcessing(false);
+      setFiles([]);
+    }
+  };
 
   //Set the files onChange function now
 
@@ -79,6 +120,8 @@ const UploadComp = () => {
     fileInputRef.current?.click();
   };
 
+  const isLoading = isUploading || isProcessing;
+
   return (
     <div className=" mt-4  rounded-xl  font-inter ">
       {/* Heading  */}
@@ -118,7 +161,7 @@ const UploadComp = () => {
         accept="application/pdf"
         onChange={handleFileChange}
         multiple
-        disabled={isUploading}
+        disabled={isLoading}
         className="hidden"
       />
 
@@ -126,7 +169,9 @@ const UploadComp = () => {
 
       {files.length > 0 && (
         <div className="mt-4 space-y-2">
-          <h3 className="font-medium text-gray-700 font-inter">Selected Files:</h3>
+          <h3 className="font-medium text-gray-700 font-inter">
+            Selected Files:
+          </h3>
           <div className="max-h-60 overflow-y-auto">
             {files.map((file, index) => (
               <div
@@ -141,7 +186,7 @@ const UploadComp = () => {
                   variant={"outline"}
                   onClick={() => onRemove(index)}
                   className="text-gray-500 hover:text-red-500"
-                  disabled={isUploading}
+                  disabled={isLoading}
                 >
                   <X />
                 </Button>
@@ -153,18 +198,19 @@ const UploadComp = () => {
 
       {/* Button to handle the file upload  */}
 
-      <Button variant={"outline"}
+      <Button
+        variant={"outline"}
         onClick={handleUpload}
-        disabled={isUploading || files.length === 0}
+        disabled={isLoading || files.length === 0}
         className={`mt-4  w-full  py-4 h-[48px]  font-inter  rounded-md  flex  items-center  justify-center ${
-          isUploading
+          isLoading
             ? "bg-blue-300  cursor-not-allowed"
             : files.length === 0
             ? "bg-gray-300  cursor-not-allowed"
             : "bg-blue-600 hover:bg-blue-700  text-white"
         }`}
       >
-        {isUploading ? (
+        {isLoading ? (
           <>
             <svg
               className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"

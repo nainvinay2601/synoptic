@@ -28,10 +28,8 @@ export const OurFileRouter = {
       console.log(`Upload Complete for userId:, ${metadata.userId}`);
       console.log("File Url:", file.ufsUrl);
 
-      return { uploadedBy: metadata.userId };
-    })
-    
- 
+      return { uploadedBy: metadata.userId, pdfUrl: file.ufsUrl };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof OurFileRouter;
