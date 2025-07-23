@@ -46,10 +46,13 @@ const UploadComp = () => {
     try {
       console.log("Starting to process PDF", pdfUrl);
 
-      const response = await fetch(`/api/parse-pdf`, {
+      const response = await fetch(`/api/process-pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pdfUrl }),
+        body: JSON.stringify({
+          pdfUrl,
+          fileName: files[0]?.name || "document.pdf", // Add a file name
+        }),
       });
 
       console.log("response Received", response);
@@ -60,7 +63,7 @@ const UploadComp = () => {
       }
 
       const result = await response.json();
-      console.log("PDF RESULT", result)
+      console.log("PDF RESULT", result);
       localStorage.setItem("pdfProcessingResult:", JSON.stringify(result));
       toast.success("PDF Processed Successfully", { id: toastId });
       router.push("/results");
