@@ -127,7 +127,7 @@ const UploadComp = () => {
 
       toast.success("Analysis Complete!", {
         id: toastId,
-        description: `${result.pages} pages processed`,
+        description: `${result.pages} page processed`,
       });
       // * 5  Redirect to result page
       router.push("/results");
