@@ -40,35 +40,103 @@ const UploadComp = () => {
   );
 
   //Process The PDF
+  // const processPdf = async (pdfUrl: string) => {
+  //   setIsProcessing(true);
+  //   const toastId = toast.loading("Processing PDF ... ");
+  //   try {
+  //     console.log("Starting to process PDF", pdfUrl);
+
+  //     const response = await fetch(`/api/process-pdf`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         pdfUrl,
+  //         fileName: files[0]?.name || "document.pdf", // Add a file name
+  //       }),
+  //     });
+
+  //     console.log("response Received", response);
+
+  //     if (!response.ok) {
+  //       const error = await response.json();
+  //       throw new Error(error.error || "Processing Failed");
+  //     }
+
+  //     const result = await response.json();
+  //     console.log("PDF RESULT", result);
+  //     localStorage.setItem("pdfProcessingResult:", JSON.stringify(result));
+  //     toast.success("PDF Processed Successfully", { id: toastId });
+  //     router.push("/results");
+  //   } catch (error: any) {
+  //     toast.error(error.message || "Failed To Process The PDF Sorry ://");
+  //   } finally {
+  //     setIsProcessing(false);
+  //     setFiles([]);
+  //   }
+  // };
+
   const processPdf = async (pdfUrl: string) => {
     setIsProcessing(true);
-    const toastId = toast.loading("Processing PDF ... ");
+    const toastId = toast.loading("Analyzing PDF Content ...");
     try {
-      console.log("Starting to process PDF", pdfUrl);
+      console.log("Initiating PDF Processing For:", pdfUrl);
 
-      const response = await fetch(`/api/process-pdf`, {
+      // * 1. Send request to processing API
+      const response = await fetch("/api/process-pdf", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           pdfUrl,
-          fileName: files[0]?.name || "document.pdf", // Add a file name
+          fileName: files[0]?.name || "document.pdf",
         }),
       });
 
-      console.log("response Received", response);
+      console.log("API RESPONSE STATUS:", response.status);
 
+      //* 2  Handle the NON-Ok response
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Processing Failed");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Processing Error:", errorData);
+
+        throw new Error(
+          errorData.error ||
+            errorData.message ||
+            `Server respond with ${response.status}`
+        );
       }
 
+      //* 3 Process Successful response
       const result = await response.json();
-      console.log("PDF RESULT", result);
-      localStorage.setItem("pdfProcessingResult:", JSON.stringify(result));
-      toast.success("PDF Processed Successfully", { id: toastId });
+      console.log("Processing Result:", {
+        summary: result.summary?.substring(0, 100) + "...",
+        pages: result.pages,
+        tokens: result.tokenUsed,
+      });
+
+      //* 4 Store the Result and navigate
+      sessionStorage.setItem(
+        "pdfProcessingResult",
+        JSON.stringify({
+          ...result,
+          fileName: files[0]?.name || "document.pdf",
+          processedAt: new Date().toISOString(),
+        })
+      );
+
+      toast.success("Analysis Complete!", {
+        id: toastId,
+        description: `${result.pages} pages processed`,
+      });
+      // * 5  Redirect to result page
       router.push("/results");
     } catch (error: any) {
-      toast.error(error.message || "Failed To Process The PDF Sorry ://");
+      console.error("PDF processing failed:", error);
+      toast.error("Analysis failed", {
+        id: toastId,
+        description: error.message || "Please try a different PDF file",
+      });
     } finally {
       setIsProcessing(false);
       setFiles([]);
