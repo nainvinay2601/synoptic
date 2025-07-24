@@ -19,61 +19,24 @@ const UploadComp = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  //we going to use the useUploadThing hook first we destructure -> startUpload, isUploading , permittedFileInfo from the hook first
+  //we going to use the useUploadThing hook first we destructure -> startUpload, isUploading  from the hook first
 
-  const { startUpload, isUploading, permittedFileInfo } = useUploadThing(
-    "pdfUploader",
-    {
-      //inLine callback
-      onClientUploadComplete: (res) => {
-        if (!res?.[0]?.ufsUrl) {
-          toast.error("Upload Complete but the no URL Returned ");
-          return;
-        }
+  const { startUpload, isUploading } = useUploadThing("pdfUploader", {
+    //inLine callback
+    onClientUploadComplete: (res) => {
+      if (!res?.[0]?.ufsUrl) {
+        toast.error("Upload Complete but the no URL Returned ");
+        return;
+      }
 
-        processPdf(res[0].ufsUrl);
-      },
-      onUploadError: (error: Error) => {
-        toast.error(`Upload Failed: ${error.message}`);
-      },
-    }
-  );
+      processPdf(res[0].ufsUrl);
+    },
+    onUploadError: (error: Error) => {
+      toast.error(`Upload Failed: ${error.message}`);
+    },
+  });
 
   //Process The PDF
-  // const processPdf = async (pdfUrl: string) => {
-  //   setIsProcessing(true);
-  //   const toastId = toast.loading("Processing PDF ... ");
-  //   try {
-  //     console.log("Starting to process PDF", pdfUrl);
-
-  //     const response = await fetch(`/api/process-pdf`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         pdfUrl,
-  //         fileName: files[0]?.name || "document.pdf", // Add a file name
-  //       }),
-  //     });
-
-  //     console.log("response Received", response);
-
-  //     if (!response.ok) {
-  //       const error = await response.json();
-  //       throw new Error(error.error || "Processing Failed");
-  //     }
-
-  //     const result = await response.json();
-  //     console.log("PDF RESULT", result);
-  //     localStorage.setItem("pdfProcessingResult:", JSON.stringify(result));
-  //     toast.success("PDF Processed Successfully", { id: toastId });
-  //     router.push("/results");
-  //   } catch (error: any) {
-  //     toast.error(error.message || "Failed To Process The PDF Sorry ://");
-  //   } finally {
-  //     setIsProcessing(false);
-  //     setFiles([]);
-  //   }
-  // };
 
   const processPdf = async (pdfUrl: string) => {
     setIsProcessing(true);
@@ -131,11 +94,13 @@ const UploadComp = () => {
       });
       // * 5  Redirect to result page
       router.push("/results");
-    } catch (error: any) {
-      console.error("PDF processing failed:", error);
+    } catch (error) {
+
+      const err = error as Error; 
+      console.error("PDF processing failed:", err);
       toast.error("Analysis failed", {
         id: toastId,
-        description: error.message || "Please try a different PDF file",
+        description: err.message || "Please try a different PDF file",
       });
     } finally {
       setIsProcessing(false);
@@ -147,7 +112,13 @@ const UploadComp = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files));
+      const validFiles = Array.from(e.target.files).filter(
+        (file) => file.type === "application/pdf"
+      );
+      if (validFiles.length !== e.target.files.length) {
+        toast.error("Only PDF files are allowed");
+      }
+      setFiles(validFiles);
     }
   };
 
@@ -218,13 +189,7 @@ const UploadComp = () => {
             ? "Drop Your Files Here ://"
             : "Drag & Drop Your Files here or click to browse :) "}
         </p>
-        <p className="text-sm text-gray-500">
-          {permittedFileInfo?.config?.pdf
-            ? `Supports: ${permittedFileInfo.config.pdf
-                .map((ext) => `.${ext}`)
-                .join(", ")}`
-            : "Supports: PDF Files"}
-        </p>
+        <p className="text-sm text-gray-500">Supports Only PDF Files</p>
       </div>
       <input
         ref={fileInputRef}

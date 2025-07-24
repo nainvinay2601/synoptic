@@ -1,6 +1,6 @@
-import { ArrowBigRight, MoveRight, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import React from "react";
-import { Button } from "../ui/button";
+
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import UserProfileButton from "../auth/UserProfileButton";
 import { SignInButton } from "../auth/SignInButton";
